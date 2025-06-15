@@ -2,7 +2,6 @@
 
 namespace Geekbrains\Application1\Application;
 
-use Exception;
 use Twig\Loader\FilesystemLoader;
 use Twig\Environment;
 
@@ -16,7 +15,7 @@ class Render {
     public function __construct(){
         $this->loader = new FilesystemLoader($_SERVER['DOCUMENT_ROOT'] . $this->viewFolder);
         $this->environment = new Environment($this->loader, [
-            'cache' => $_SERVER['DOCUMENT_ROOT'].'/cache/',
+            //'cache' => $_SERVER['DOCUMENT_ROOT'].'/cache/',
         ]);
     }
 
@@ -24,24 +23,21 @@ class Render {
         $template = $this->environment->load('main.tpl');
         
         $templateVariables['content_template_name'] = $contentTemplateName;
+
+        if(isset($_SESSION['auth']['user_name'])){
+            $templateVariables['user_authorized'] = true;
+            $templateVariables['user_name'] = $_SESSION['auth']['user_name'];
+            $templateVariables['user_lastname'] = $_SESSION['auth']['user_lastname'];
+        }
  
         return $template->render($templateVariables);
     }
 
-    public static function renderExceptionPage(Exception $exception): string {
-        $contentTemplateName = "error.tpl";
-        $viewFolder = '/src/Domain/Views/';
-
-        $loader = new FilesystemLoader($_SERVER['DOCUMENT_ROOT'] . $viewFolder);
-        $environment = new Environment($loader, [
-            'cache' => $_SERVER['DOCUMENT_ROOT'].'/cache/',
-        ]);
-
-        $template = $environment->load('main.tpl');
+    public function renderPageWithForm(string $contentTemplateName = 'page-index.tpl', array $templateVariables = []) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
         
-        $templateVariables['content_template_name'] = $contentTemplateName;
-        $templateVariables['error_message'] = $exception->getMessage();
+        $templateVariables['csrf_token'] = $_SESSION['csrf_token'];
  
-        return $template->render($templateVariables);
+        return $this->renderPage($contentTemplateName, $templateVariables);
     }
 }
